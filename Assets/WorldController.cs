@@ -6,41 +6,51 @@ public class WorldController : MonoBehaviour
 {
     public int Width, Height;
     public Sprite TileSprite;
-    private SpriteRenderer[,] tileGraphics;
+    private Tile[,] tiles;
+    
     void Start()
     {
         GameObject tileHolder = new GameObject("TileHolder");
-        tileGraphics = new SpriteRenderer[Width, Height];
+        tiles = new Tile[Width, Height];
         for (int x = 0; x < Width; x++)
         {
             for (int y = 0; y < Height; y++)
             {
-                GameObject tile = new GameObject("Tile_" + x + "_" + y);
-                tile.transform.position = new Vector2(x, y);
-                tile.transform.SetParent(tileHolder.transform);
-
-                GameObject tileGraphic = new GameObject("Tile_Graphic");
-                tileGraphic.transform.SetParent(tile.transform);
-                tileGraphic.transform.localPosition = Vector2.zero;
-                tileGraphic.transform.localScale = Vector2.one * 0.8f;
-                SpriteRenderer sr = tileGraphic.AddComponent<SpriteRenderer>();
-                sr.sprite = TileSprite;
-                tileGraphics[x, y] = sr;
+                tiles[x, y] = new Tile(x, y, tileHolder.transform, TileSprite);
             }
         }
+
+        MouseController.OnClick += OnClick;
     }
 
-    void Update()
+    private void OnClick(bool down, int button, Vector2 mousePosition)
     {
-        if (Input.GetMouseButtonDown(0))
+        if (down == false) return;
+        
+        Vector2 worldMousePosition = Camera.main.ScreenToWorldPoint(mousePosition);
+        int tileX = (int) (worldMousePosition.x + 0.5f);
+        int tileY = (int) (worldMousePosition.y + 0.5f);
+
+        if (!(tileX >= 0 && tileX <= Width - 1 && tileY >= 0 && tileY <= Height - 1))
         {
-            Vector2 worldMousePosition = Camera.main.ScreenToWorldPoint(Input.mousePosition);
-            int tileX = (int) (worldMousePosition.x + 0.5f);
-            int tileY = (int) (worldMousePosition.y + 0.5f);
-            Debug.Log(tileX + " " + tileY);
-            if (tileX >= 0 && tileX <= Width - 1 && tileY >= 0 && tileY <= Height - 1)
+            return;
+        }
+
+        if (button == 0)
+        {
+            Tile tile = tiles[tileX, tileY];
+            if (tile.HasTower() == false)
             {
-                tileGraphics[tileX, tileY].color = tileGraphics[tileX, tileY].color == Color.white ? Color.red : Color.white;
+                tile.PlaceTower();
+            }
+        }
+
+        if (button == 1)
+        {
+            Tile tile = tiles[tileX, tileY];
+            if (tile.HasTower() == true)
+            {
+                tile.RemoveTower();
             }
         }
     }
